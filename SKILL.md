@@ -17,7 +17,7 @@ Stop hand-filling the same personal/team details into every hackathon, event, or
 
 ## Layout & single source of truth
 
-**仓库区就是这个技能的唯一实体。** 代码和私人档案都住在仓库根，靠 `.gitignore` 隔离私人部分。
+**仓库区就是这个技能的唯一实体。** 代码与私人配置都在仓库里，私人部分集中在 `user/`、由 `.gitignore` 隔离。
 
 ```
 <repo root>/                     ← 技能根（= SKILL.md 所在层）
