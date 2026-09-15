@@ -109,6 +109,13 @@ Keep the browser open at the confirmation step.
 4. 飞书自定义单选/多选：必须用 **`agent-browser click "@<ref>"` 真实鼠标点击**（ref = 快照里"选项文字带引号"那一行）。**JS eval 的 `.click()` 会被 React 还原**，不要用。
 5. 收尾：`Stop-ScheduledTask`+`Unregister-ScheduledTask` 名为 `WBChromeView` 的任务并结束 chrome 进程；**提交按钮始终留给用户本人点**。
 
+### 5c. 演示 / 演练模式（用假数据，别动真档案）
+用户要求「演示一遍、随便编点信息」时：
+1. 写一份**虚构档案**（如 `demo_profile.json`，姓名/手机/邮箱/微信/地址全编造），放在会话工作区，**不要**写进 `user/`。
+2. 用环境变量指向它：`export FORM_AUTOFILL_PROFILE=<路径>` —— 解析优先级第 1 位，真实档案零改动。
+3. 若用户已有可见标签页，用 CDP `PUT http://127.0.0.1:<port>/json/new` 新开一个（新标签是活动页、初值 `about:blank`），再 `open <url>` 导航它，**不要**用 `open` 直接顶掉用户当前的页。
+4. 填完照常校验 + 截图 + 交人工提交；明确告知这是一份**未提交的演示数据**。
+
 ### 6. Confirm (mandatory)
 Print a review table: `field | value | ✓auto / ✎human`. Explicitly tell the human to review and click 提交 themselves. Do not click submit on their behalf.
 
@@ -118,6 +125,9 @@ Print a review table: `field | value | ✓auto / ✎human`. Explicitly tell the 
 - **agent-browser 连接不跨命令保留**：驱动外部浏览器时每条命令都要先 `connect <port>`。
 - **ref 不跨 bash 调用保留（同源易错）**：`snapshot -i` 得到的 `@ref` 只在**同一条 shell 命令**内有效；换到下一条命令再用就 `✗ Unknown ref`。所以 `snapshot -i` 必须与随后的 `fill/click @ref` 写进**同一条 bash 命令**里（snapshot 落文件 → grep 出 ref → 再 fill/click），不能拆成两次工具调用。
 - **其它 open 坑**：`agent-browser open` **绝不能接管道**（如 `| tail`），否则常驻 daemon 占住管道永久卡死；SPA 表单 `open` 后先 `sleep 3~5` 再快照；飞书表单偶发「无法访问此网站」，重开一次即可。
+- **同一条命令内，`fill` 之后再 `click` 旧 ref 也要重新 `snapshot`**：`fill` 会改动 DOM，先前快照里的 ref 会失效，点击**静默不生效**（选项 class 仍是 `no-checked`，不报错，最难查）。正确顺序：`snapshot` → `fill …` → **再 `snapshot`** → 从新快照取 ref → `click @新ref`（2026-09-15 实测，在 Tripo 表单上因此返工过一次）。
+- **不想打扰用户已有的标签页时**：`agent-browser open` 只能**导航当前页**，会顶掉用户正开着的页。要新开一个：用 CDP 直接建标签 `PUT http://127.0.0.1:<port>/json/new`（新标签初值是 `about:blank` 且成为活动页），再 `open <url>` 导航它 —— 用户原有标签原样保留。
+- **演练 / 演示场景用假数据**：不要把假信息写进真实档案。用环境变量 `FORM_AUTOFILL_PROFILE=<另一份临时档案>` 指向一份假档案（解析优先级第 1 位支持它），真实档案零改动。
 - **可见性**：用户看不到沙箱自起的浏览器；要"用户可见"就用 `scripts/launch_visible_chrome.ps1`（见 5b）。
 - `references/field_patterns.md` lists the label→profile-key matching rules; extend it when you meet a new recurring field.
 - 飞书表单通常是公开分享链接，填写无需登录。若表单要求登录，先请人类登录，再继续。
