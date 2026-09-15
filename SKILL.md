@@ -21,6 +21,7 @@ Stop hand-filling the same personal/team details into every hackathon, event, or
 
 ```
 <repo root>/                     ← 技能根（= SKILL.md 所在层）
+├── README.md                    项目说明（给人看：定位/结构/快速开始/隔离/FAQ）
 ├── SKILL.md                     技能定义（WorkBuddy 加载入口）
 ├── .gitignore                   隔离 user/ 私人配置 与其它敏感项
 ├── user/                        ★ 私人配置目录 · 整目录被 ignore，永不入库
@@ -34,9 +35,12 @@ Stop hand-filling the same personal/team details into every hackathon, event, or
 │   ├── fill_plan.py             快照 + 档案 → agent-browser 命令
 │   ├── fill.sh                  填表流程备忘（含全部已知坑）
 │   ├── launch_visible_chrome.ps1 让用户「看得见」的浏览器（Windows）
+│   ├── check_privacy.sh         push 前的一键隐私自检（只读）
 │   └── deploy.sh                仓库区 → 已安装技能目录（加载镜像）
 └── references/ examples/        匹配规则 / 示例档案
 ```
+
+> 面向人的项目说明见 `README.md`；push 前跑一次 `bash scripts/check_privacy.sh`。
 
 - **私人配置一律放 `user/`**（不是技能根、也不是家目录）。当前 `user/` 里是 `profile.json`；
   凭证类（如 `feishu_creds.json`）也放这里 —— 整个目录被 `.gitignore` 的 `user/*` 拦住，**永不入库**。
