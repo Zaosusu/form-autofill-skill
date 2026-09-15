@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Manage the form-autofill fixed-info profile (single source of truth).
+"""Manage the form-autofill-skill fixed-info profile (single source of truth).
 
 Subcommands:
   init              create profile with default empty keys (idempotent)
@@ -12,7 +12,7 @@ import json
 import os
 import sys
 
-PROFILE_DIR = os.path.join(os.path.expanduser("~"), ".workbuddy", "form-autofill")
+PROFILE_DIR = os.path.join(os.path.expanduser("~"), ".workbuddy", "form-autofill-skill")
 PROFILE_PATH = os.path.join(PROFILE_DIR, "profile.json")
 
 # Common keys seeded on first init. Values are filled by the user.

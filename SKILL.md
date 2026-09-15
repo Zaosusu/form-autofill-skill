@@ -1,5 +1,5 @@
 ---
-name: form-autofill
+name: form-autofill-skill
 description: This skill should be used when the user wants to fill out an online form (especially 飞书/Feishu 多维表格公开表单, hackathon/event registration, device or application forms) with their repeated personal or team info. It stores a fixed-info profile, auto-fills fields that map to it, surfaces unknown or context-specific fields for the human to answer, and always requires human confirmation before submitting. Trigger phrases include "填表", "帮我填", "自动填", "这个表单", pasting a form URL, or complaints about repeatedly hand-filling the same details.
 ---
 
@@ -19,16 +19,16 @@ Stop hand-filling the same personal/team details into every hackathon, event, or
 本仓库**只包含 skill 逻辑，不含任何私人信息**。架构上把"skill 本体"与"用户私人数据"彻底分离：
 
 - **私人信息（姓名/手机/邮箱/地址…）**：运行时由 `scripts/profile.py init` 生成在用户家目录
-  `~/.workbuddy/form-autofill/profile.json`，**永远在仓库之外**，重装 skill 也不会被清掉。
+  `~/.workbuddy/form-autofill-skill/profile.json`，**永远在仓库之外**，重装 skill 也不会被清掉。
 - **`.gitignore`** 已屏蔽 `profile.json`、`*.local.json`、`feishu_creds.json`，即便在仓库内生成也不会被提交。
 - **`examples/profile.example.json`**：脱敏的空模板，仅展示字段 schema，供克隆后照抄填写。
 - 飞书应用凭证（`app_id`/`app_secret`）同样存到家目录 `feishu_creds.json` 并被 gitignore，不进仓库。
 
 ```
-form-autofill/
+form-autofill-skill/
 ├── SKILL.md                 # skill 定义（本文件，无私人数据）
 ├── scripts/
-│   ├── profile.py           # 档案管理，默认读写 ~/.workbuddy/form-autofill/profile.json
+│   ├── profile.py           # 档案管理，默认读写 ~/.workbuddy/form-autofill-skill/profile.json
 │   └── map_fields.py        # 字段→档案匹配
 ├── references/
 │   ├── field_patterns.md    # 匹配规则
@@ -51,7 +51,7 @@ python scripts/profile.py path      # prints the profile.json location
 python scripts/profile.py set <key> <value>
 python scripts/profile.py show
 ```
-The profile lives at `~/.workbuddy/form-autofill/profile.json` (private, outside the skill dir so reinstalls don't wipe it).
+The profile lives at `~/.workbuddy/form-autofill-skill/profile.json` (private, outside the skill dir so reinstalls don't wipe it).
 
 ### 1. Receive a form
 Accept a form URL (or pasted field list / screenshot). This skill targets 飞书多维表格公开表单 (`*.feishu.cn/share/base/form/...`) and similar web forms.
