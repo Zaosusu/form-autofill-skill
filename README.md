@@ -268,4 +268,7 @@ An **Agent Skill** that auto-fills repeated online forms from a single fixed-inf
 
 ## License
 
-尚未指定。若计划开源使用，请补充 `LICENSE` 文件。
+[MIT](LICENSE) © 2026 覃翘
+
+You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software.
+See `LICENSE` for the full text.
