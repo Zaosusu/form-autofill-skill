@@ -1,0 +1,18 @@
+# ===== 私人信息：绝对不提交 =====
+# 用户固定信息档案（姓名/手机/邮箱/地址等），运行时生成在用户家目录
+profile.json
+# 任何本地覆盖 / 草稿
+*.local.json
+# 飞书开放平台应用凭证（app_id/app_secret）
+feishu_creds.json
+
+# ===== Python =====
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ===== OS / 编辑器 =====
+.DS_Store
+Thumbs.db
+*.swp
