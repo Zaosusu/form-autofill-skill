@@ -17,7 +17,7 @@ import os
 import sys
 
 PROFILE_DEFAULT_PATH = os.path.join(
-    os.path.expanduser("~"), ".workbuddy", "form-autofill", "profile.json"
+    os.path.expanduser("~"), ".workbuddy", "form-autofill-skill", "profile.json"
 )
 
 # (profile_key, [keywords]) — first match wins, evaluated top to bottom.

@@ -15,29 +15,6 @@ Stop hand-filling the same personal/team details into every hackathon, event, or
 - **Prefer asking over wrong guessing** for ambiguous or context-dependent fields (e.g. 项目简介, 队名).
 - **Remember answers.** When the human supplies a value for a new field, offer to store it back into the profile so it becomes `auto` next time.
 
-## Privacy & repository layout（隐私与目录结构）
-本仓库**只包含 skill 逻辑，不含任何私人信息**。架构上把"skill 本体"与"用户私人数据"彻底分离：
-
-- **私人信息（姓名/手机/邮箱/地址…）**：运行时由 `scripts/profile.py init` 生成在用户家目录
-  `~/.workbuddy/form-autofill-skill/profile.json`，**永远在仓库之外**，重装 skill 也不会被清掉。
-- **`.gitignore`** 已屏蔽 `profile.json`、`*.local.json`、`feishu_creds.json`，即便在仓库内生成也不会被提交。
-- **`examples/profile.example.json`**：脱敏的空模板，仅展示字段 schema，供克隆后照抄填写。
-- 飞书应用凭证（`app_id`/`app_secret`）同样存到家目录 `feishu_creds.json` 并被 gitignore，不进仓库。
-
-```
-form-autofill-skill/
-├── SKILL.md                 # skill 定义（本文件，无私人数据）
-├── scripts/
-│   ├── profile.py           # 档案管理，默认读写 ~/.workbuddy/form-autofill-skill/profile.json
-│   └── map_fields.py        # 字段→档案匹配
-├── references/
-│   ├── field_patterns.md    # 匹配规则
-│   └── feishu_api.md        # 飞书 Open API/CLI 提交（可选）
-├── examples/
-│   └── profile.example.json # 脱敏模板
-└── .gitignore               # 屏蔽所有私人信息
-```
-
 ## Workflow
 
 ### 0. First-time setup (profile)
@@ -85,11 +62,24 @@ Load **agent-browser** and set each field's value:
 - Leave 提交 / 提交申请 untouched.
 Keep the browser open at the confirmation step.
 
+### 5b. 让用户"亲眼看见"填表（重要 · Windows）
+默认 `agent-browser open` 自起的浏览器跑在**沙箱隔离显示**里 —— 用户的物理屏幕上**看不到**（窗口空白）。如果用户要求"屏幕上/右侧看到你到底填了什么"（本 skill 的常见诉求），必须换路子：
+1. 用 `scripts/launch_visible_chrome.ps1`（Windows 计划任务 + `-LogonType Interactive`）在**用户自己的登录会话**里拉起 Chrome，并开 `--remote-debugging-port=9222`。**固定同一个 `--user-data-dir`**，否则全新配置每次都会弹 Chromium 首次"登录 Chromium"页（用户会很烦）。
+2. 之后所有操作走 `agent-browser connect 9222` 驱动那个**可见窗口**。关键：**每一条 agent-browser 命令前都要重新 `connect <port>`**（连接状态不跨 shell 调用保留；漏了它会尝试自起浏览器并在沙箱里 exit code 3 崩掉）。
+3. 验证落点：`Get-Process chrome | ? {$_.MainWindowHandle -ne 0}` 的 `SessionId` 应等于用户 console 会话（通常 1）；此时 `agent-browser screenshot` 截出来的图**是有内容的**，可自检。
+4. 飞书自定义单选/多选：必须用 **`agent-browser click "@<ref>"` 真实鼠标点击**（ref = 快照里"选项文字带引号"那一行）。**JS eval 的 `.click()` 会被 React 还原**，不要用。
+5. 收尾：`Stop-ScheduledTask`+`Unregister-ScheduledTask` 名为 `WBChromeView` 的任务并结束 chrome 进程；**提交按钮始终留给用户本人点**。
+
 ### 6. Confirm (mandatory)
 Print a review table: `field | value | ✓auto / ✎human`. Explicitly tell the human to review and click 提交 themselves. Do not click submit on their behalf.
 
 ## Notes
 - **飞书/办公类表单允许自动化。** 浏览器自动化与飞书 Open API/CLI 两条路都可用——「禁用浏览器自动化」是 mcn-studio 针对微信抓取的封号风险规矩，仅限小红书、抖音、微信等内容/社交平台，**不适用于飞书这类办公表单**（用户 2026-09-15 明确）。本 skill 默认用浏览器（agent-browser）零配置填入；若提供飞书应用凭证，可改用更稳的 API/CLI 提交（见 `references/feishu_api.md`）。
+- **飞书选项选择（易错）**：单选/多选是自定义 `div`、页面无 `<input>`。必须 `agent-browser click "@ref"`（真实鼠标）→ 判定 `...-option-checked`。JS 合成 `click()` 会被 React 还原（2026-09-15 实测结论，纠正了早期"必须用 JS 点容器"的错误说法）。
+- **agent-browser 连接不跨命令保留**：驱动外部浏览器时每条命令都要先 `connect <port>`。
+- **ref 不跨 bash 调用保留（同源易错）**：`snapshot -i` 得到的 `@ref` 只在**同一条 shell 命令**内有效；换到下一条命令再用就 `✗ Unknown ref`。所以 `snapshot -i` 必须与随后的 `fill/click @ref` 写进**同一条 bash 命令**里（snapshot 落文件 → grep 出 ref → 再 fill/click），不能拆成两次工具调用。
+- **其它 open 坑**：`agent-browser open` **绝不能接管道**（如 `| tail`），否则常驻 daemon 占住管道永久卡死；SPA 表单 `open` 后先 `sleep 3~5` 再快照；飞书表单偶发「无法访问此网站」，重开一次即可。
+- **可见性**：用户看不到沙箱自起的浏览器；要"用户可见"就用 `scripts/launch_visible_chrome.ps1`（见 5b）。
 - `references/field_patterns.md` lists the label→profile-key matching rules; extend it when you meet a new recurring field.
 - 飞书表单通常是公开分享链接，填写无需登录。若表单要求登录，先请人类登录，再继续。
 - 如果人类更想要「只给答案表、自己复制粘贴」的保守版，跳过第 5 步，直接把对照表交给人类。
