@@ -15,6 +15,41 @@ Stop hand-filling the same personal/team details into every hackathon, event, or
 - **Prefer asking over wrong guessing** for ambiguous or context-dependent fields (e.g. 项目简介, 队名).
 - **Remember answers.** When the human supplies a value for a new field, offer to store it back into the profile so it becomes `auto` next time.
 
+## Layout & single source of truth
+
+**仓库区就是这个技能的唯一实体。** 代码和私人档案都住在仓库根，靠 `.gitignore` 隔离私人部分。
+
+```
+<repo root>/                     ← 技能根（= SKILL.md 所在层）
+├── SKILL.md                     技能定义（WorkBuddy 加载入口）
+├── .gitignore                   隔离 user/ 私人配置 与其它敏感项
+├── user/                        ★ 私人配置目录 · 整目录被 ignore，永不入库
+│   ├── .gitkeep                 唯一被跟踪的文件（占位，保证目录存在）
+│   ├── profile.json             固定信息档案（ignore）
+│   └── feishu_creds.json        飞书凭证，可选（ignore）
+├── scripts/
+│   ├── paths.py                 统一解析「技能根」与「档案路径」
+│   ├── profile.py               档案读写（init / show / set / get / path）
+│   ├── map_fields.py            表单字段 → 档案键 映射
+│   ├── fill_plan.py             快照 + 档案 → agent-browser 命令
+│   ├── fill.sh                  填表流程备忘（含全部已知坑）
+│   ├── launch_visible_chrome.ps1 让用户「看得见」的浏览器（Windows）
+│   └── deploy.sh                仓库区 → 已安装技能目录（加载镜像）
+└── references/ examples/        匹配规则 / 示例档案
+```
+
+- **私人配置一律放 `user/`**（不是技能根、也不是家目录）。当前 `user/` 里是 `profile.json`；
+  凭证类（如 `feishu_creds.json`）也放这里 —— 整个目录被 `.gitignore` 的 `user/*` 拦住，**永不入库**。
+- **档案解析优先级**（`scripts/paths.py`）：
+  1. 环境变量 `FORM_AUTOFILL_PROFILE`（显式覆盖）
+  2. `<技能根>/user/profile.json` ← **默认，仓库区**
+  3. `<技能根>/profile.json`（兼容早期写法）
+  4. `<技能根>/.profile_root` 里写的路径（已安装镜像目录用）
+  5. `~/.workbuddy/form-autofill-skill/profile.json`（旧位置，仅向后兼容回退）
+  用 `python scripts/profile.py path` 随时查看当前生效的是哪一份。
+- **已安装目录只是镜像**：WorkBuddy 只从 `~/.workbuddy/skills/<name>/` 加载技能，那是**加载入口**、不是数据区。改代码请在**仓库区**改，再 `bash scripts/deploy.sh` 同步过去（只覆盖/新增，**从不删除**目标文件，且**不会**复制 `user/`）；deploy 会在镜像里留一个 `.profile_root` 指针，让镜像里的脚本也能找到仓库区那份档案 —— **私人数据全局只有一份**。
+- **绝不要在仓库区之外再建一份档案**：数据一分叉就必然漂移。
+
 ## Workflow
 
 ### 0. First-time setup (profile)
@@ -24,11 +59,11 @@ python scripts/profile.py init
 ```
 Then collect the user's fixed info (name, gender, phone, email, wechat, org, title, major, city, address, team_name, …) — either by asking, or by having them edit the profile file directly:
 ```
-python scripts/profile.py path      # prints the profile.json location
+python scripts/profile.py path      # prints which profile.json is in effect
 python scripts/profile.py set <key> <value>
 python scripts/profile.py show
 ```
-The profile lives at `~/.workbuddy/form-autofill-skill/profile.json` (private, outside the skill dir so reinstalls don't wipe it).
+The profile lives at `<技能根>/user/profile.json` —— 就在仓库区里的 `user/`，被 `.gitignore` 隔离，永不入库。参考模板见 `examples/profile.example.json`。
 
 ### 1. Receive a form
 Accept a form URL (or pasted field list / screenshot). This skill targets 飞书多维表格公开表单 (`*.feishu.cn/share/base/form/...`) and similar web forms.

@@ -12,22 +12,30 @@ profile 键: phone email wechat org title major city address name
 """
 import sys, re, json, os
 
-PROFILE = os.environ.get("FORM_AUTOFILL_PROFILE",
-                         os.path.expanduser("~/.workbuddy/form-autofill-skill/profile.json"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import paths  # noqa: E402
+
+PROFILE = paths.profile_path()
+
+
+def resolve_name(profile):
+    """姓名取值：真实姓名信号由 map_fields 处理；这里按 name_pref 解析。"""
+    pref = profile.get("name_pref", "real")
+    if pref == "stage":
+        return profile.get("stage_name", "") or profile.get("real_name", "")
+    return profile.get("real_name", "") or profile.get("stage_name", "")
 
 
 def main():
     snap = open(sys.argv[1], encoding="utf-8").read()
     spec = json.loads(sys.argv[2])
     profile = json.load(open(PROFILE, encoding="utf-8"))
-    name_pref = profile.get("name_pref", "real")
-    disp = profile.get("stage_name") if (name_pref == "stage" and profile.get("stage_name")) else profile.get("name", "")
     fv = {
         "phone": profile.get("phone", ""), "email": profile.get("email", ""),
         "wechat": profile.get("wechat", ""), "org": profile.get("org", ""),
         "title": profile.get("title", ""), "major": profile.get("major", ""),
         "city": profile.get("city", ""), "address": profile.get("address", ""),
-        "name": disp, "team_name": profile.get("team_name", ""),
+        "name": resolve_name(profile), "team_name": profile.get("team_name", ""),
         "id_number": profile.get("id_number", ""), "team_size": profile.get("team_size", ""),
         "project_desc": profile.get("project_desc", ""), "remark": profile.get("remark", ""),
     }

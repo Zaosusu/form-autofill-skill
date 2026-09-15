@@ -6,14 +6,15 @@ Subcommands:
   show              print the whole profile as JSON
   set <k> <v...>    set a key to a value
   get <k>           print a single key's value
-  path              print the profile file location
+  path              print which profile file is in effect (with a location hint)
+
+档案位置由 scripts/paths.py 解析，默认就是**仓库区**里的 profile.json（.gitignore 隔离，不入库）。
 """
 import json
 import os
 import sys
 
-PROFILE_DIR = os.path.join(os.path.expanduser("~"), ".workbuddy", "form-autofill-skill")
-PROFILE_PATH = os.path.join(PROFILE_DIR, "profile.json")
+import paths
 
 # Common keys seeded on first init. Values are filled by the user.
 # 姓名拆分为 real_name / stage_name，配合 name_pref 决定"姓名"类字段填哪个。
@@ -36,15 +37,17 @@ DEFAULT_KEYS = {
 
 
 def load():
-    if not os.path.exists(PROFILE_PATH):
+    p = paths.profile_path()
+    if not os.path.exists(p):
         return {}
-    with open(PROFILE_PATH, "r", encoding="utf-8") as f:
+    with open(p, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def save(data):
-    os.makedirs(PROFILE_DIR, exist_ok=True)
-    with open(PROFILE_PATH, "w", encoding="utf-8") as f:
+    p = paths.profile_path_for_write()
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
@@ -53,7 +56,7 @@ def cmd_init():
     for k, v in DEFAULT_KEYS.items():
         data.setdefault(k, v)
     save(data)
-    print(f"Profile initialized at {PROFILE_PATH}")
+    print(f"Profile initialized at {paths.profile_path()}")
     print(json.dumps(data, ensure_ascii=False, indent=2))
 
 
@@ -93,7 +96,7 @@ def main():
             return
         cmd_get(args[1])
     elif cmd == "path":
-        print(PROFILE_PATH)
+        print(paths.describe())
     else:
         print(f"unknown command: {cmd}")
 

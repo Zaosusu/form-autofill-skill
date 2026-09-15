@@ -1,0 +1,7 @@
+# 私人配置目录（user/）—— 内容全部被 .gitignore 隔离，永不入库。
+#
+# 期望文件：
+#   user/profile.json        固定信息档案（scripts/profile.py 读写）
+#   user/feishu_creds.json   飞书开放平台凭证（可选，走 API 路径时才需要）
+#
+# 这个 .gitkeep 是唯一被跟踪的文件，用来保证 clone 后目录存在。

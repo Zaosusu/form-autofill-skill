@@ -1,9 +1,14 @@
-# ===== 私人信息：绝对不提交 =====
-# 用户固定信息档案（姓名/手机/邮箱/地址等），运行时生成在用户家目录
+# ===== 私人信息 / 私人配置：绝对不提交 =====
+# user/ —— 私人配置目录（固定信息档案、飞书凭证、本地覆盖）
+# 整目录隔离，只保留 .gitkeep 占位，保证 clone 出来目录结构完整。
+user/*
+!user/.gitkeep
+# 兜底：万一有档案被误放到技能根
 profile.json
-# 任何本地覆盖 / 草稿
 *.local.json
-# 飞书开放平台应用凭证（app_id/app_secret）
+# 已安装镜像里的档案指针（写明本机仓库路径）
+.profile_root
+# 飞书开放平台应用凭证（app_id/app_secret）—— 期望位置是 user/feishu_creds.json
 feishu_creds.json
 
 # ===== Python =====

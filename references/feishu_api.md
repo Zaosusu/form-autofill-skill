@@ -27,5 +27,5 @@
 - 无论哪条路，**提交动作仍建议最终由人类确认**（见 SKILL.md 第 6 步）；若要全自动提交，须人类明确授权。
 
 ## 注意
-- 凭证（`app_secret`）属敏感信息，存到 `~/.workbuddy/form-autofill-skill/feishu_creds.json` 并 gitignore，不要写进 skill 目录或提交到仓库。
+- 凭证（`app_secret`）属敏感信息，存到仓库区的私人配置目录 `user/feishu_creds.json`（整目录被 `.gitignore` 的 `user/*` 隔离），不要写进 skill 目录的其它位置、更不要提交到仓库。
 - 不同飞书域（feishu.cn / larksuite.com）host 不同，按实际域替换 `open.feishu.cn`。

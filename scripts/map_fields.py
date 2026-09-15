@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Map extracted form fields to the fixed-info profile.
 
-Input : profile.json (path via --profile, else default) + a fields JSON.
+Input : profile.json (path via --profile, else scripts/paths.py default = 仓库区) + a fields JSON.
         fields JSON = list of {"label", "type", "required", "options"}
         Read from a file path (positional arg) or from stdin.
 Output: JSON array, one item per field:
@@ -16,14 +16,13 @@ import json
 import os
 import sys
 
-PROFILE_DEFAULT_PATH = os.path.join(
-    os.path.expanduser("~"), ".workbuddy", "form-autofill-skill", "profile.json"
-)
+import paths
 
 # (profile_key, [keywords]) — first match wins, evaluated top to bottom.
+# 注意顺序：更"具体"的键必须排在更"通用"的键前面，否则会被通用键抢走。
+# 例：`team_name` 必须排在 `name` 之前，否则英文标签 "Team Name" 会先命中 `name`。
 PATTERNS = [
     ("anonymous", ["匿名"]),
-    ("name", ["姓名", "名字", "真实姓名", "name"]),
     ("gender", ["性别", "sex", "gender"]),
     ("phone", ["手机", "电话", "联系电话", "mobile", "phone", "tel"]),
     ("email", ["邮箱", "电子邮件", "邮件", "email", "e-mail", "mail"]),
@@ -39,6 +38,7 @@ PATTERNS = [
     ("team_size", ["队员人数", "队伍人数", "团队人数", "成员数", "人数", "members"]),
     ("project_desc", ["项目简介", "项目描述", "项目说明", "参赛项目",
                       "简介", "描述", "description", "intro"]),
+    ("name", ["姓名", "名字", "真实姓名", "name"]),
     ("remark", ["备注", "备注信息", "remark", "note", "其他"]),
 ]
 
@@ -71,7 +71,7 @@ def match_key(label):
 
 def main():
     args = sys.argv[1:]
-    profile_path = PROFILE_DEFAULT_PATH
+    profile_path = paths.profile_path()
     rest = []
     i = 0
     while i < len(args):
