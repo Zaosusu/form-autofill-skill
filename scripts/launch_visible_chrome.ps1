@@ -1,4 +1,4 @@
-# launch_visible_chrome.ps1
+﻿# launch_visible_chrome.ps1
 # 目的：在【用户自己的 Windows 登录会话】里拉起一个"用户能亲眼看见"的 Chrome，
 #       并开好远程调试端口，供 agent-browser 通过 `connect 9222` 驱动。
 #

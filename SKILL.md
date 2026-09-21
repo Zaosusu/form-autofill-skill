@@ -10,6 +10,8 @@ Stop hand-filling the same personal/team details into every hackathon, event, or
 
 ## Hard Rules
 - **Never auto-submit.** Always present the filled result and wait for explicit human confirmation before any "提交"/"提交申请" click.
+  - **唯一例外 —— 用户事先明确授权代提交时，可直接点提交。** 用户说过「直接提交掉 / 你直接办完 / 别问我」这类话，即可代点 提交，完成后**截图回报结果**。默认（用户没表态时）仍是把提交留给用户本人。
+- **Windows 可见浏览器脚本编码**：`scripts/launch_visible_chrome.ps1` 含中文注释，**必须存成 UTF-8 with BOM**；无 BOM 时 PowerShell 5.1 按 GBK 解码会引号断裂、解析失败。改完可用 `[System.Management.Automation.Language.Parser]::ParseFile(...)` 校验 PARSE OK。
 - **Never guess sensitive data** (passwords, ID numbers, bank info). If absent from the profile, ask the human.
 - **Unknown fields → human.** Only auto-fill when a field clearly maps to a profile key with a non-empty value.
 - **Prefer asking over wrong guessing** for ambiguous or context-dependent fields (e.g. 项目简介, 队名).
@@ -124,7 +126,9 @@ Print a review table: `field | value | ✓auto / ✎human`. Explicitly tell the 
 - **飞书选项选择（易错）**：单选/多选是自定义 `div`、页面无 `<input>`。必须 `agent-browser click "@ref"`（真实鼠标）→ 判定 `...-option-checked`。JS 合成 `click()` 会被 React 还原（2026-09-15 实测结论，纠正了早期"必须用 JS 点容器"的错误说法）。
 - **agent-browser 连接不跨命令保留**：驱动外部浏览器时每条命令都要先 `connect <port>`。
 - **ref 不跨 bash 调用保留（同源易错）**：`snapshot -i` 得到的 `@ref` 只在**同一条 shell 命令**内有效；换到下一条命令再用就 `✗ Unknown ref`。所以 `snapshot -i` 必须与随后的 `fill/click @ref` 写进**同一条 bash 命令**里（snapshot 落文件 → grep 出 ref → 再 fill/click），不能拆成两次工具调用。
+- **飞书文本框是 contenteditable，`fill`/`type <sel>` 都写不进去（易错，2026-09-21 PixVerse 积分表实测）**：飞书表单的「单行/多行文本」字段是 `contenteditable` 的 `div`（不是 `<textarea>`）。对它用 `agent-browser fill "@ref" "<值>"` 会报 `✗ Unknown ref`，用 `type "@ref" "<值>"` 也不落字（DOM 里仍为空）。**正确姿势：先 `click "@ref"` 聚焦该字段，再用 `agent-browser keyboard type "<值>"`（真实键盘事件、不带 selector）逐字输入**。字段在视口外时先 `agent-browser scrollintoview "@ref"` 再 `click`；点错字段会导致字符落到上一个框里，所以**每填一个都要 `snapshot` 回读确认值真的进去了**。填完后 `snapshot` 里该行的 `generic "<值>" [ref=…] contenteditable]: <值>` 才是成功标志。
 - **其它 open 坑**：`agent-browser open` **绝不能接管道**（如 `| tail`），否则常驻 daemon 占住管道永久卡死；SPA 表单 `open` 后先 `sleep 3~5` 再快照；飞书表单偶发「无法访问此网站」，重开一次即可。
+- **新开标签：CDP `/json/new` 可能不生效（Chrome 153 实测）**：`GET/PUT http://127.0.0.1:<port>/json/new?url=<编码URL>` 在部分 Chrome 版本上**不新建标签、静默无反应**。改用 **`agent-browser tab new`**（新建活动标签，初值 `about:blank`）再 `agent-browser open "<url>"` 导航它 —— 同样不会顶掉用户原有标签页。
 - **同一条命令内，`fill` 之后再 `click` 旧 ref 也要重新 `snapshot`**：`fill` 会改动 DOM，先前快照里的 ref 会失效，点击**静默不生效**（选项 class 仍是 `no-checked`，不报错，最难查）。正确顺序：`snapshot` → `fill …` → **再 `snapshot`** → 从新快照取 ref → `click @新ref`（2026-09-15 实测，在 Tripo 表单上因此返工过一次）。
 - **不想打扰用户已有的标签页时**：`agent-browser open` 只能**导航当前页**，会顶掉用户正开着的页。要新开一个：用 CDP 直接建标签 `PUT http://127.0.0.1:<port>/json/new`（新标签初值是 `about:blank` 且成为活动页），再 `open <url>` 导航它 —— 用户原有标签原样保留。
 - **演练 / 演示场景用假数据**：不要把假信息写进真实档案。用环境变量 `FORM_AUTOFILL_PROFILE=<另一份临时档案>` 指向一份假档案（解析优先级第 1 位支持它），真实档案零改动。
